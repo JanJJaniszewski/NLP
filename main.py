@@ -27,4 +27,4 @@ def execute_pipeline(parts):
 
 # Press the green button in the gutter to run the script.
 if __name__ == '__main__':
-    execute_pipeline(['A'])
+    execute_pipeline(['Z', 'A'])
