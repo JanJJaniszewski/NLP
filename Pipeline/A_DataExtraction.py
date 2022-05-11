@@ -56,10 +56,13 @@ def get_stock_data(df_text):
 
         # Explanation:
         # prices[whatever you want (e.g. max, min, close)][day number (0 = day before, 1 = day itself, 2 = day after)]
-        if which == 'before':
-            return prices['Close'][1]  # Open price from day itself
-        elif which == 'after':
-            return prices['Open'][2]  # Open price from day after
+        try:
+            if which == 'before':
+                return prices['Close'][1]  # Open price from day itself
+            elif which == 'after':
+                return prices['Open'][2]  # Open price from day after
+        except IndexError as e:
+            return np.nan
 
     print('Requesting stock market prices from the almighty Yahoos. This can take some time!')
     df_text['price_before'] = df_text.apply(lambda row: get_comparison_prices(row, 'before'), 1)
