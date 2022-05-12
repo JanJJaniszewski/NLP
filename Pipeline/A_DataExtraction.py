@@ -11,11 +11,13 @@ import config as cf
 
 
 def simplify(nam):
+    # FREE
     return re.sub("[^a-zA-Z]+", "",
                   re.sub('THE ', '', nam.upper()).split(',')[0].split(' ')[0].split('-')[0].split('.')[0])
 
 
 def transform_to_df():
+    # FREE
     from config_dictionaries import company_name_mapping
 
     print('Reading the data and returning it as a dataframe')
@@ -44,6 +46,7 @@ def transform_to_df():
 
 
 def get_stock_data(df_text):
+    # BLOCK: Daniel
     print('Enriching data with prices from the stock market')
     # Request data via Yahoo public API
     def get_comparison_prices(row, which):
