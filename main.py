@@ -13,7 +13,9 @@ def execute_pipeline(parts):
         Z.rename_data()
     if 'A' in parts:
         df_text = A.transform_to_df()
+        df_text = A.split_on_qanda(df_text)
         df_texts_and_prices = A.get_stock_data(df_text)
+        print(df_texts_and_prices.head())
     if 'B' in parts:
         pass
     if 'C' in parts:

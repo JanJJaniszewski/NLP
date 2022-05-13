@@ -45,25 +45,107 @@ def transform_to_df():
     return (df_text)
 
 
+def split_on_qanda(df_text):
+    """
+    Splits the earnings call into a presentation part and a Q&A part. Splitting
+    is done using the word 'question'. If this word does not occur in the text,
+    a 2/3 - 1/3 split is made and the final part is considered the Q&A part.
+    
+    Additional rules can be considered
+    
+    Parameters
+    ----------
+    df_text : pandas dataframe
+        Dataframe containing at least the transcript of the earnings call in a
+        column named 'call'.
+
+    Returns
+    -------
+    pandas dataframe
+        The input dataframe with two additional columns named 'presentation'
+        and 'q_and_a'.
+
+    """
+    # FREE
+    print('Splitting calls into presentation and Q&A parts')
+    def get_pres_qanda(row):
+        # Select the call
+        call_i = row["call"].split('\n')
+        
+        for j, line in enumerate(call_i):
+            if 'question' in line.lower():
+                break
+        
+        # Assign j to a new variable for readability
+        if j == len(call_i) - 1:
+            qanda_index = (len(call_i) // 3) * 2
+        else:
+            qanda_index = j
+        
+        # Create strings for the presentation and Q&A
+        presentation = ""
+        qanda = ""
+        for k, line in enumerate(call_i):
+            if k < qanda_index:
+                presentation += call_i[k] + '\n'
+            else:
+                qanda += call_i[k] + '\n'
+        
+        # Remove trailing linebreaks
+        presentation = presentation[:-1]
+        qanda = qanda[:-1]
+        
+        # Return tuple with the presentation and the Q&A
+        return presentation, qanda
+    
+    df_text["presentation"] = ""
+    df_text["q_and_a"] = ""
+    
+    for i, row in df_text.iterrows():
+        if row['call'] is not None:
+            df_text.loc[i, "presentation"], df_text.loc[i, "q_and_a"] = get_pres_qanda(row)
+    
+    print('Finished: Splitting calls into presentation and Q&A parts')
+    
+    return df_text
+
+
 def get_stock_data(df_text):
     # BLOCK: Daniel
     print('Enriching data with prices from the stock market')
     # Request data via Yahoo public API
     def get_comparison_prices(row, which):
         print('.')
+        # Define a wide range of days around the earnings call
+        start = row['date'] - timedelta(days=5)
+        end = row['date'] + timedelta(days=5)
+        
         try:
-            prices = pdr.get_data_yahoo(row['idx'], row['date'] - timedelta(days=1), row['date'] + timedelta(days=1))
+            # Get the stock prices from yahoo
+            prices = pdr.get_data_yahoo(row['idx'], start, end)
         except:
             Warning(f'No values found for company with stock market index {row["idx"]}')
             return np.nan
-
+        
+        # Get the index of the earning calls date in the dataframe
+        date_index = np.where(prices.index == row['date'])[0][0]
+        
         # Explanation:
         # prices[whatever you want (e.g. max, min, close)][day number (0 = day before, 1 = day itself, 2 = day after)]
+        # Daniel: I noticed that some stock prices already changed on the same
+        #         day as the earnings call. So taking the opening price would
+        #         miss the price change. Therefore I chose the closing price of
+        #         the day before. Because the adjusted closing price is
+        #         corrected for events, I think it may be more robust to use
+        #         the closing price on the day after the earnings call. If we
+        #         do not want to use the adjusted prices, we can take the 
+        #         closing price on the day before and the opening price of the
+        #         day after.
         try:
             if which == 'before':
-                return prices['Close'][1]  # Open price from day itself
+                return prices["Adj Close"][date_index - 1]  # Adjusted close from the day before
             elif which == 'after':
-                return prices['Open'][2]  # Open price from day after
+                return prices["Adj Close"][date_index + 1]  # Adjusted close from the day after
         except IndexError as e:
             return np.nan
 
