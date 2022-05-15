@@ -72,15 +72,17 @@ def split_on_qanda(df_text):
         # Select the call
         call_i = row["call"].split('\n')
         
+        # Set default value for the Q&A index
+        qanda_index = (len(call_i) // 3) * 2
+        
+        # Adjust the Q&A index based on some keywords
         for j, line in enumerate(call_i):
             if 'question' in line.lower():
+                qanda_index = j
                 break
-        
-        # Assign j to a new variable for readability
-        if j == len(call_i) - 1:
-            qanda_index = (len(call_i) // 3) * 2
-        else:
-            qanda_index = j
+            elif 'q&a' in line.lower():
+                qanda_index = j
+                break
         
         # Create strings for the presentation and Q&A
         presentation = ""
