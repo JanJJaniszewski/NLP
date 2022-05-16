@@ -127,8 +127,8 @@ def split_on_qanda(df_text):
         # Return tuple with the presentation and the Q&A
         return presentation, qanda
     
-    df_text["presentation"] = ""
-    df_text["q_and_a"] = ""
+    df_text.assign(presentation="")
+    df_text.assign(q_and_a="")
     
     for i, row in df_text.iterrows():
         if row['call'] is not None:
@@ -143,9 +143,9 @@ def split_on_qanda(df_text):
 def get_stock_data(df_text):
     # BLOCK: Daniel
     print('Enriching data with prices from the stock market')
+    
     # Request data via Yahoo public API
-    def get_comparison_prices(row, which):
-        print('.')
+    def get_comparison_prices(row):
         # Define a wide range of days around the earnings call
         start = row['date'] - timedelta(days=5)
         end = row['date'] + timedelta(days=5)
@@ -155,7 +155,7 @@ def get_stock_data(df_text):
             prices = pdr.get_data_yahoo(row['idx'], start, end)
         except:
             Warning(f'No values found for company with stock market index {row["idx"]}')
-            return np.nan
+            return np.nan, np.nan
         
         # Get the index of the earning calls date in the dataframe
         date_index = np.where(prices.index == row['date'])[0][0]
@@ -171,17 +171,32 @@ def get_stock_data(df_text):
         #         do not want to use the adjusted prices, we can take the 
         #         closing price on the day before and the opening price of the
         #         day after.
+        
+        # Price before the earnings call
         try:
-            if which == 'before':
-                return prices["Adj Close"][date_index - 1]  # Adjusted close from the day before
-            elif which == 'after':
-                return prices["Adj Close"][date_index + 1]  # Adjusted close from the day after
+            price_before = prices["Adj Close"][date_index - 1]  # Adjusted close from the day before
         except IndexError as e:
-            return np.nan
+            price_before = np.nan
+        
+        # Price after the earnings call
+        try:
+            price_after = prices["Adj Close"][date_index + 1]  # Adjusted close from the day after
+        except IndexError as e:
+            price_after = np.nan
+        
+        return price_before, price_after
 
     print('Requesting stock market prices from the almighty Yahoos. This can take some time!')
-    df_text['price_before'] = df_text.apply(lambda row: get_comparison_prices(row, 'before'), 1)
-    df_text['price_after'] = df_text.apply(lambda row: get_comparison_prices(row, 'after'), 1)
+    df_text = df_text.assign(price_before=np.nan)
+    df_text = df_text.assign(price_after=np.nan)
+    
+    # Iterate through the rows of the dataframe to obtain the prices
+    for i, row in df_text.iterrows():
+        print(f'\rTranscript number: {str(i + 1).zfill(3)}', end='\r')
+        before, after = get_comparison_prices(row)
+        df_text.loc[i, 'price_before'] = before
+        df_text.loc[i, 'price_after'] = after
+    print("")
 
     # Save dataset just in case
     print(f'Saving dataset in {cf.texts_and_prices_file}')

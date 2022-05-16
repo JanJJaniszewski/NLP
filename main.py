@@ -17,6 +17,8 @@ def execute_pipeline(parts):
         df_texts_and_prices = A.get_stock_data(df_text)
         print(df_texts_and_prices.head())
     if 'B' in parts:
+        B.create_wordcloud()
+        B.price_change_summary()
         df_text = B.transform_to_finbert_format()
     if 'C' in parts:
         pass
@@ -29,4 +31,4 @@ def execute_pipeline(parts):
 
 # Press the green button in the gutter to run the script.
 if __name__ == '__main__':
-    execute_pipeline(['B'])
+    execute_pipeline(['A', 'B'])

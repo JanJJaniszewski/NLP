@@ -13,3 +13,6 @@ texts_and_prices_file = join(A_A_throughput, 'df_texts_and_prices.pickle')
 path_train = join(A_B_throughput, 'train.csv')
 path_test = join(A_B_throughput, 'test.csv')
 path_validate = join(A_B_throughput, 'validation.csv')
+
+# Image location
+path_images = './Data/output/images'
