@@ -36,3 +36,18 @@ if __name__ == '__main__':
           .format(change_neg, np.abs(negative_mean) * 100))
     print(f'Number of no changes: {change_not}')
     print(f'Number of missing values: {missing}')
+
+#%%
+
+
+import config as cf
+import pandas as pd
+import matplotlib.pyplot as plt
+import numpy as np
+
+
+data = pd.read_pickle(cf.texts_and_prices_file)
+
+
+
+

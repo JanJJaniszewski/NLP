@@ -1,5 +1,6 @@
 import os
 import re
+import string
 from datetime import timedelta
 from os.path import join
 
@@ -17,7 +18,7 @@ def simplify(nam):
 
 
 def transform_to_df():
-    # BLOCK: Daniel
+    # FREE
     from config_dictionaries import company_name_mapping
 
     print('Reading the data and returning it as a dataframe')
@@ -40,6 +41,32 @@ def transform_to_df():
 
     texts = [read_file(join(cf.Z_A_zipfolder, filename)) for filename in folders]
     df_text = pd.DataFrame({'name': company_names, 'idx': company_idx, 'date': call_dates, 'call': texts})
+    
+    # Sometimes sentences continue after linebreaks, to get a full sentence on
+    # a single line, do the following
+    def join_sentences(row):
+        if row['call'] is not None:
+            row['call'] = re.sub(r'\n,', ' ,', row['call'])
+            row['call'] = re.sub(r' ,', ',', row['call'])
+            
+            # This can probably be done properly with regex, but I don't know 
+            # how
+            for c in string.ascii_lowercase:
+                pattern = f'\\n{c}'
+                replace = f' {c}'
+                row['call'] = re.sub(pattern, replace, row['call'])
+
+        return row
+    df_text = df_text.apply(join_sentences, axis=1)
+    
+    # Remove the linebreak at the end of the transcript
+    def remove_trailing_lb(row):
+        if row['call'] is not None and len(row['call']) > 0:
+            if row['call'][-1] == '\n':
+                row['call'] = row['call'][:-1]
+        return row
+    df_text = df_text.apply(remove_trailing_lb, axis=1)
+    
     print('Finished: Reading the data and returning it as a dataframe')
 
     return (df_text)
@@ -105,7 +132,8 @@ def split_on_qanda(df_text):
     
     for i, row in df_text.iterrows():
         if row['call'] is not None:
-            df_text.loc[i, "presentation"], df_text.loc[i, "q_and_a"] = get_pres_qanda(row)
+            df_text.loc[i, "presentation"], df_text.loc[i, "q_and_a"] =\
+                get_pres_qanda(row)
     
     print('Finished: Splitting calls into presentation and Q&A parts')
     
