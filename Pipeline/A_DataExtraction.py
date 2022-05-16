@@ -17,7 +17,7 @@ def simplify(nam):
 
 
 def transform_to_df():
-    # FREE
+    # BLOCK: Daniel
     from config_dictionaries import company_name_mapping
 
     print('Reading the data and returning it as a dataframe')
