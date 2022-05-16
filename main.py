@@ -17,7 +17,7 @@ def execute_pipeline(parts):
         df_texts_and_prices = A.get_stock_data(df_text)
         print(df_texts_and_prices.head())
     if 'B' in parts:
-        pass
+        df_text = B.transform_to_finbert_format()
     if 'C' in parts:
         pass
     if 'D' in parts:
@@ -29,4 +29,4 @@ def execute_pipeline(parts):
 
 # Press the green button in the gutter to run the script.
 if __name__ == '__main__':
-    execute_pipeline(['Z', 'A'])
+    execute_pipeline(['B'])
