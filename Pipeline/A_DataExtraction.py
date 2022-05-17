@@ -67,6 +67,16 @@ def transform_to_df():
         return row
     df_text = df_text.apply(remove_trailing_lb, axis=1)
     
+    # Ensure that each line has a single sentence
+    def one_sentence_per_line(row):
+        if row['call'] is not None and len(row['call']) > 0:
+            row['call'] = re.sub(r'([.?!]) ', r'\1\n', row['call'])
+            row['call'] = re.sub(r'[.]\n', r'\n', row['call'])
+            if row['call'][-1] == '.':
+                row['call'] = row['call'][:-1]
+        return row
+    df_text = df_text.apply(one_sentence_per_line, axis=1)
+    
     print('Finished: Reading the data and returning it as a dataframe')
 
     return (df_text)
