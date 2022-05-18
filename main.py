@@ -17,8 +17,12 @@ def execute_pipeline(parts):
         df_texts_and_prices = A.get_stock_data(df_text)
         print(df_texts_and_prices.head())
     if 'B' in parts:
-        B.create_wordcloud()
-        B.price_change_summary()
+        # Set to false if figures shouldn't be redrawn, 
+        # B.price_change_summary_2017() takes quite a while
+        if False:
+            B.create_wordcloud()
+            B.price_change_summary()
+            B.price_change_summary_2017()
         df_text = B.transform_to_finbert_format()
     if 'C' in parts:
         pass

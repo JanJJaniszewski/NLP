@@ -151,7 +151,7 @@ def split_on_qanda(df_text):
 
 
 def get_stock_data(df_text):
-    # BLOCK: Daniel
+    # FREE
     print('Enriching data with prices from the stock market')
     
     # Request data via Yahoo public API
@@ -202,7 +202,8 @@ def get_stock_data(df_text):
     
     # Iterate through the rows of the dataframe to obtain the prices
     for i, row in df_text.iterrows():
-        print(f'\rTranscript number: {str(i + 1).zfill(3)}', end='\r')
+        print(f'\rTranscript number: {str(i + 1).zfill(3)}/{df_text.shape[0]}', 
+              end='\r')
         before, after = get_comparison_prices(row)
         df_text.loc[i, 'price_before'] = before
         df_text.loc[i, 'price_after'] = after
