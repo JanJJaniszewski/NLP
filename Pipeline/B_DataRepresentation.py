@@ -212,10 +212,9 @@ def stopwords_drop(df):
     print('Finished dropping stopwords')
     return df
 
-def transform_to_finbert_format():
+def transform_to_finbert_format(texts, column_to_transform = 'presentation'):
     print('Transforming data into Finbert format')
-    texts = pd.read_pickle(cf.A_B_texts_and_prices_file)
-    texts['text'] = texts['presentation']
+    texts['text'] = texts[column_to_transform]
     texts = texts.dropna()
     texts['label'] = 'neutral'
     texts.loc[((texts['price_after'] - texts['price_before']) / texts['price_before']) > 0.01, 'label'] = 'positive'

@@ -33,14 +33,16 @@ def execute_pipeline(parts):
 
         # Loading
         texts = pd.read_pickle(cf.A_B_texts_and_prices_file)
-        texts['presentation'].head()
         # Executing
         if 'B_names' in parts:
             texts = B.names_drop(texts)
         if 'B_stopwords' in parts:
             texts = B.stopwords_drop(texts)
-        if 'B_finbert' in parts:
-            texts = B.transform_to_finbert_format()
+        if 'B_finbert_presentation' in parts:
+            texts = B.transform_to_finbert_format(texts, column_to_transform='presentation')
+        if 'B_finbert_qa' in parts:
+            texts = B.transform_to_finbert_format(texts, column_to_transform='q_and_a')
+
 
         # Saving
         texts.to_pickle(cf.B_C_cleaned_data)
@@ -58,7 +60,7 @@ def execute_pipeline(parts):
     if 'E' in parts:
         pass
     if 'F' in parts:
-        pass
+        pass # See own package inside this project
 
 # Press the green button in the gutter to run the script.
 if __name__ == '__main__':
