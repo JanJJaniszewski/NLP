@@ -1,10 +1,33 @@
 import config as cf
 import pandas as pd
 import numpy as np
+from gensim.parsing.preprocessing import remove_stopwords
+import urllib.request
+
+def names_drop(df):
+    print('Dropping names')
+    names = urllib.request.urlopen(
+        'https://www.usna.edu/Users/cs/roche/courses/s15si335/proj1/files.php%3Ff=names.txt&downloadcode=yes')
+    names = str(names.read()).split('\\n')
+    for n in names:
+        df['presentation'] = df['presentation'].str.replace(n, '')
+        df['q_and_a'] = df['q_and_a'].str.replace(n, '')
+
+    print('Finished dropping names')
+    return df
+
+
+def stopwords_drop(df):
+    print('Dropping stopwords')
+    df['presentation'] = [remove_stopwords(t) for t in df['presentation']]
+    df['q_and_a'] = [remove_stopwords(t) for t in df['q_and_a']]
+
+    print('Finished dropping stopwords')
+    return df
 
 def transform_to_finbert_format():
     print('Transforming data into Finbert format')
-    texts = pd.read_pickle(cf.texts_and_prices_file)
+    texts = pd.read_pickle(cf.A_B_texts_and_prices_file)
     texts['text'] = texts['presentation']
     texts = texts.dropna()
     texts['label'] = 'neutral'

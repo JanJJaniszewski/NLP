@@ -117,7 +117,7 @@ def get_stock_data(df_text):
     print('Enriching data with prices from the stock market')
     # Request data via Yahoo public API
     def get_comparison_prices(row, which):
-        print('.')
+        print(f"Getting data for {row['idx']}")
         # Define a wide range of days around the earnings call
         start = row['date'] - timedelta(days=5)
         end = row['date'] + timedelta(days=5)
@@ -156,8 +156,7 @@ def get_stock_data(df_text):
     df_text['price_after'] = df_text.apply(lambda row: get_comparison_prices(row, 'after'), 1)
 
     # Save dataset just in case
-    print(f'Saving dataset in {cf.texts_and_prices_file}')
-    df_text.to_pickle(cf.texts_and_prices_file)
+    print(f'Saving dataset in {cf.A_B_texts_and_prices_file}')
 
     print('Finished: Enriching data with prices from the stock market')
     return df_text

@@ -9,7 +9,8 @@ Z_A_zipfolder = './Data/throughput/Z_A/ReleasedDataset_mp3'
 
 
 # File locations
-texts_and_prices_file = join(A_A_throughput, 'df_texts_and_prices.pickle')
+A_B_texts_and_prices_file = join(A_A_throughput, 'df_texts_and_prices.pickle')
+B_C_cleaned_data = join(A_A_throughput, 'df_texts_and_prices.pickle')
 path_train = join(A_B_throughput, 'train.csv')
 path_test = join(A_B_throughput, 'test.csv')
 path_validate = join(A_B_throughput, 'validation.csv')

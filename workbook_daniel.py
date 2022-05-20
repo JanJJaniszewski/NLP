@@ -9,7 +9,7 @@ def perc_change(row):
 
 
 if __name__ == '__main__':
-    data = pd.read_pickle(cf.texts_and_prices_file)
+    data = pd.read_pickle(cf.A_B_texts_and_prices_file)
     data['change'] = data.apply(lambda row: perc_change(row), 1)
     
     plt.figure(dpi=300)

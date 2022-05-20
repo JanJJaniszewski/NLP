@@ -6,20 +6,41 @@ import Pipeline.E_AttentionModel as E
 import Pipeline.F_BERT as F
 import Pipeline.Z_DataUnpacking as Z
 import config as cf
+import pandas as pd
 
 def execute_pipeline(parts):
     if 'Z' in parts:
         Z.unpack_data()
         Z.rename_data()
     if 'A' in parts:
+        # Loading (in transform_to_df) and Executing
         df_text = A.transform_to_df()
         df_text = A.split_on_qanda(df_text)
         df_texts_and_prices = A.get_stock_data(df_text)
-        print(df_texts_and_prices.head())
+
+        # Saving
+        df_texts_and_prices.to_pickle(cf.A_B_texts_and_prices_file)
+
     if 'B' in parts:
-        df_text = B.transform_to_finbert_format()
+        # Loading
+        texts = pd.read_pickle(cf.A_B_texts_and_prices_file)
+        texts['presentation'].head()
+        # Executing
+        if 'B_names' in parts:
+            texts = B.names_drop(texts)
+        if 'B_stopwords' in parts:
+            texts = B.stopwords_drop(texts)
+        if 'B_finbert' in parts:
+            texts = B.transform_to_finbert_format()
+
+        # Saving
+        texts.to_pickle(cf.B_C_cleaned_data)
     if 'C' in parts:
-        pass
+        # Load
+        texts = pd.read_pickle(cf.B_C_cleaned_data)
+
+        # Save
+        # texts.to_pickle(cf.B_C_cleaned_data)
     if 'D' in parts:
         pass
     if 'E' in parts:
@@ -29,4 +50,8 @@ def execute_pipeline(parts):
 
 # Press the green button in the gutter to run the script.
 if __name__ == '__main__':
-    execute_pipeline(['B'])
+    execute_pipeline(['A',
+                      'B', 'B_names', 'B_stopwords']) # General pipeline
+
+    # For BERT
+    # execute_pipeline(['B', 'B_finbert']) # For Finbert
