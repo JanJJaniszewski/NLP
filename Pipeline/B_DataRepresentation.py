@@ -77,7 +77,7 @@ def price_change_summary():
         data['price_change'] = data.apply(lambda row: perc_change(row), 1)
     
     # Create histogram
-    bins = np.arange(-32, 32+1e-6, 1)
+    bins = np.arange(-32.5, 32.5 + 1e-6, 1)
     plt.figure(dpi=400, figsize=[6, 2.2])
     plt.subplot(1,2,1)
     plt.hist(data['price_change'] * 100, bins=bins, density=True, rwidth=0.6)
@@ -152,7 +152,7 @@ def price_change_summary_2017():
     returns = np.concatenate(returns_list)
     
     # Draw the histogram
-    bins = np.arange(-32, 32+1e-6, 1)
+    bins = np.arange(-32.5, 32.5 + 1e-6, 1)
     plt.figure(dpi=400, figsize=[6, 2.2])
     plt.subplot(1,2,1)
     plt.hist(returns * 100, bins=bins, density=True, rwidth=0.6)

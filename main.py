@@ -19,13 +19,15 @@ def execute_pipeline(parts):
     if 'B' in parts:
         # Set to false if figures shouldn't be redrawn, 
         # B.price_change_summary_2017() takes quite a while
-        if False:
+        if True:
             B.create_wordcloud()
             B.price_change_summary()
             B.price_change_summary_2017()
         df_text = B.transform_to_finbert_format()
     if 'C' in parts:
-        pass
+        # This part takes roughly 16 hours
+        perplexities = C.LDA_perplexities([i for i in range(1, 21)])
+        # C.plot_perplexities()
     if 'D' in parts:
         pass
     if 'E' in parts:
@@ -35,4 +37,4 @@ def execute_pipeline(parts):
 
 # Press the green button in the gutter to run the script.
 if __name__ == '__main__':
-    execute_pipeline(['A', 'B'])
+    execute_pipeline(['C'])
