@@ -1,5 +1,6 @@
 import os
 import re
+import string
 from datetime import timedelta
 from os.path import join
 
@@ -154,17 +155,20 @@ def get_stock_data(df_text):
     print('Enriching data with prices from the stock market')
 
     # Request data via Yahoo public API
-    def get_comparison_prices(row, which):
+    def get_comparison_prices(row):
         print(f"Getting data for {row['idx']}")
         # Define a wide range of days around the earnings call
         start = row['date'] - timedelta(days=5)
         end = row['date'] + timedelta(days=5)
         
+        i = 0
+        
         try:
             # Get the stock prices from yahoo
             prices = pdr.get_data_yahoo(row['idx'], start, end)
         except:
-            Warning(f'No values found for company with stock market index {row["idx"]}')
+            Warning('No values found for company with stock market ' + \
+                    f'index {row["idx"]}')
             return np.nan, np.nan
         
         # Get the index of the earning calls date in the dataframe
@@ -202,12 +206,12 @@ def get_stock_data(df_text):
 
     # Iterate through the rows of the dataframe to obtain the prices
     for i, row in df_text.iterrows():
-        print(f'\rTranscript number: {str(i + 1).zfill(3)}/{df_text.shape[0]}',
-              end='\r')
+        # print(f'\rTranscript number: {str(i + 1).zfill(3)}/{df_text.shape[0]}',
+        #       end='\r')
         before, after = get_comparison_prices(row)
         df_text.loc[i, 'price_before'] = before
         df_text.loc[i, 'price_after'] = after
-    print("")
+    # print("")
 
     print('Finished: Enriching data with prices from the stock market')
     return df_text

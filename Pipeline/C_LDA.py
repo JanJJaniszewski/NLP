@@ -14,7 +14,6 @@ from nltk.stem.wordnet import WordNetLemmatizer
 from os.path import join
 
 
-
 def LDA_preprocess2(docs):
     tokenizer = RegexpTokenizer(r'\w+')
     
@@ -133,7 +132,7 @@ def LDA_perplexities(n_topics, passes=50, k=4, n_repeats=3,
     perplexities = pd.Series(perplexities, index=n_topics)
     
     if save_perplexities:
-        perplexities.to_pickle(cf.lda_perplexities)
+        perplexities.to_pickle(cf.C_lda_perplexities)
     
     return perplexities
 
@@ -178,10 +177,10 @@ def LDA(num_topics=None, passes=50):
     print(lda_topics)
     
     # Save output
-    lda_topics.to_pickle(cf.lda_topics)
+    lda_topics.to_pickle(cf.C_lda_topics)
     
     # Save model to disk.
-    lda_model.save(cf.lda_model)
+    lda_model.save(cf.C_lda_model)
     
     # Load a potentially pretrained model from disk.
     # lda = LdaModel.load(cf.lda_model)
