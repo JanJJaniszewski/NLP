@@ -1,15 +1,14 @@
 import re
-
-import config as cf
-import pandas as pd
-import numpy as np
-import matplotlib.pyplot as plt
-
-from wordcloud import WordCloud, STOPWORDS
+from datetime import date
 from os.path import join
 
+import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
 import pandas_datareader as pdr
-from datetime import date
+from wordcloud import WordCloud, STOPWORDS
+
+import config as cf
 
 
 def create_wordcloud():
@@ -79,7 +78,7 @@ def price_change_summary():
     # Create histogram
     bins = np.arange(-32.5, 32.5 + 1e-6, 1)
     plt.figure(dpi=400, figsize=[6, 2.2])
-    plt.subplot(1,2,1)
+    plt.subplot(1, 2, 1)
     plt.hist(data['price_change'] * 100, bins=bins, density=True, rwidth=0.6)
     plt.xlim([-0.32 * 100, 0.32 * 100])
     plt.ylim([0, 0.32])
@@ -102,11 +101,11 @@ def price_change_summary():
     negative_mean = data['price_change'][data['price_change'] < 0].mean()
 
     # Print information
-    print('\nAverage change in stock price is {}{:.2f}%'\
+    print('\nAverage change in stock price is {}{:.2f}%' \
           .format('+' if total_mean >= 0 else '-', np.abs(total_mean) * 100))
-    print('Number of positive changes: {} (on average +{:.2f}%)'\
+    print('Number of positive changes: {} (on average +{:.2f}%)' \
           .format(change_pos, positive_mean * 100))
-    print('Number of negative changes: {} (on average -{:.2f}%)'\
+    print('Number of negative changes: {} (on average -{:.2f}%)' \
           .format(change_neg, np.abs(negative_mean) * 100))
     print(f'Number of no changes: {change_not}')
     print(f'Number of missing values: {missing}\n')
@@ -144,8 +143,8 @@ def price_change_summary_2017():
 
             returns_list.append(returns)
         except:
-            warning_msg = 'No values found for company with stock market ' +\
-                'index {idx_i}'
+            warning_msg = 'No values found for company with stock market ' + \
+                          'index {idx_i}'
             Warning(warning_msg)
 
     # Get all returns in a single array
@@ -154,7 +153,7 @@ def price_change_summary_2017():
     # Draw the histogram
     bins = np.arange(-32.5, 32.5 + 1e-6, 1)
     plt.figure(dpi=400, figsize=[6, 2.2])
-    plt.subplot(1,2,1)
+    plt.subplot(1, 2, 1)
     plt.hist(returns * 100, bins=bins, density=True, rwidth=0.6)
     plt.xlim([-0.32 * 100, 0.32 * 100])
     plt.ylim([0, 0.32])
@@ -176,11 +175,11 @@ def price_change_summary_2017():
     negative_mean = returns[returns < 0].mean()
 
     # Print information
-    print('\nAverage change in stock price is {}{:.2f}%'\
+    print('\nAverage change in stock price is {}{:.2f}%' \
           .format('+' if total_mean >= 0 else '-', np.abs(total_mean) * 100))
-    print('Number of positive changes: {} (on average +{:.2f}%)'\
+    print('Number of positive changes: {} (on average +{:.2f}%)' \
           .format(change_pos, positive_mean * 100))
-    print('Number of negative changes: {} (on average -{:.2f}%)'\
+    print('Number of negative changes: {} (on average -{:.2f}%)' \
           .format(change_neg, np.abs(negative_mean) * 100))
     print(f'Number of no changes: {change_not}')
 
@@ -188,8 +187,10 @@ def price_change_summary_2017():
 
     return None
 
+
 from gensim.parsing.preprocessing import remove_stopwords
 import urllib.request
+
 
 def names_drop(df):
     print('Dropping names')
@@ -207,16 +208,17 @@ def names_drop(df):
 def stopwords_drop(df):
     print('Dropping stopwords')
     df['presentation'] = df['presentation'].apply(lambda row:
-        row if isinstance(row, str) else '')
+                                                  row if isinstance(row, str) else '')
     df['q_and_a'] = df['q_and_a'].apply(lambda row:
-        row if isinstance(row, str) else '')
+                                        row if isinstance(row, str) else '')
     df['presentation'] = [remove_stopwords(t) for t in df['presentation']]
     df['q_and_a'] = [remove_stopwords(t) for t in df['q_and_a']]
 
     print('Finished dropping stopwords')
     return df
 
-def transform_to_finbert_format(texts, column_to_transform = 'presentation'):
+
+def transform_to_finbert_format(texts, column_to_transform='presentation'):
     print('Transforming data into Finbert format')
     texts['text'] = texts[column_to_transform]
     texts = texts.dropna()
@@ -230,7 +232,9 @@ def transform_to_finbert_format(texts, column_to_transform = 'presentation'):
     train.to_csv(cf.path_train, sep="\t")
     test.to_csv(cf.path_test, sep="\t")
     validate.to_csv(cf.path_validate, sep="\t")
-    print(f'Saved all training, test, and validation in Finbert format to {cf.path_train}, {cf.path_validate}, {cf.path_test}')
+    print(
+        f'Saved all training, test, and validation in Finbert format to {cf.path_train}, {cf.path_validate}, {cf.path_test}')
+
 
 if __name__ == '__main__':
     transform_to_finbert_format()
