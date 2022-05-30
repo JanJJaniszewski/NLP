@@ -15,9 +15,10 @@ B_C_cleaned_data = join(A_A_throughput, 'df_texts_and_prices.pickle')
 path_train = join(A_B_throughput, 'train.csv')
 path_test = join(A_B_throughput, 'test.csv')
 path_validate = join(A_B_throughput, 'validation.csv')
-lda_perplexities = join(C_C_throughput, 'perplexities.pickle')
-lda_topics = join(C_C_throughput, 'lda_topics.pickle')
-lda_model = join(C_C_throughput, 'lda_model')
+C_lda_perplexities = join(C_C_throughput, 'perplexities.pickle')
+C_lda_2_topics = join(C_C_throughput, 'lda_2_topics.pickle')
+C_lda_3_topics = join(C_C_throughput, 'lda_3_topics.pickle')
+C_lda_model = join(C_C_throughput, 'lda_model')
 
 # Image location
 path_images = './Data/output/images'

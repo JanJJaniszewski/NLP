@@ -206,6 +206,10 @@ def names_drop(df):
 
 def stopwords_drop(df):
     print('Dropping stopwords')
+    df['presentation'] = df['presentation'].apply(lambda row:
+        row if isinstance(row, str) else '')
+    df['q_and_a'] = df['q_and_a'].apply(lambda row:
+        row if isinstance(row, str) else '')
     df['presentation'] = [remove_stopwords(t) for t in df['presentation']]
     df['q_and_a'] = [remove_stopwords(t) for t in df['q_and_a']]
 

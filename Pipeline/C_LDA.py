@@ -7,6 +7,8 @@ import numpy as np
 import re
 import gensim
 import nltk
+import string
+import spacy
 
 from gensim.models import Phrases
 from nltk.tokenize import RegexpTokenizer
@@ -14,17 +16,24 @@ from nltk.stem.wordnet import WordNetLemmatizer
 from os.path import join
 
 
-
 def LDA_preprocess2(docs):
+    # All lower case
+    docs = docs.str.lower()
+    
+    # Remove lower case
+    docs = docs.str.replace('[{}]'.format(string.punctuation), '')
+    
+    # Do tokenization and some other stuff
     tokenizer = RegexpTokenizer(r'\w+')
     
     for idx in range(len(docs)):
         docs[idx] = docs[idx].lower()
+        docs[idx] = re.sub(r'  ', ' ', docs[idx])
         docs[idx] = re.sub(r'\n', ' ', docs[idx])
         docs[idx] = re.sub(r'â', '', docs[idx]) # Check whether there is a hat on the a
         docs[idx] = tokenizer.tokenize(docs[idx])
     
-    # Remove numbers, but not words that contain numbers.
+    # Remove numbers, but not words that contain numbers
     docs = [[token for token in doc if not token.isnumeric()] for doc in docs]
     
     # Remove words that are only one character.
@@ -36,8 +45,13 @@ def LDA_preprocess2(docs):
     lemmatizer = WordNetLemmatizer()
     docs = [[lemmatizer.lemmatize(token) for token in doc] for doc in docs]
     
+    # Remove additional useless words
+    to_remove = ['we', 're', 'thats', 'way']
+    for i, d in enumerate(docs):
+        docs[i] = [w for w in d if w not in to_remove]
+    
     # Bigrams
-    bigram = Phrases(docs, min_count=20)
+    bigram = Phrases(docs, min_count=15)
     for idx in range(len(docs)):
         for token in bigram[docs[idx]]:
             if '_' in token:
@@ -47,9 +61,9 @@ def LDA_preprocess2(docs):
     # Create a dictionary representation of the documents.
     dictionary = corpora.Dictionary(docs)
     
-    # Filter out words that occur less than 20 documents, or more than 50% of 
+    # Filter out words that occur less than 15 documents, or more than 50% of 
     # the documents.
-    dictionary.filter_extremes(no_below=20, no_above=0.5)
+    dictionary.filter_extremes(no_below=15, no_above=0.5)
     
     # Bag-of-words representation of the documents.
     corpus = [dictionary.doc2bow(doc) for doc in docs]
@@ -58,13 +72,13 @@ def LDA_preprocess2(docs):
     print('Number of documents: %d' % len(corpus))
     
     # Make an index to word dictionary.
-    temp = dictionary[0]  # This is only to "load" the dictionary.
+    _ = dictionary[0]  # This is only to "load" the dictionary.
     id2word = dictionary.id2token
     
     return corpus, id2word    
 
 
-def LDA_perplexities(n_topics, passes=50, k=4, n_repeats=3, 
+def LDA_perplexities(df, n_topics, passes=50, k=5, n_repeats=3, 
                      save_perplexities=True):
     def LDA_CV(corpus, id2word, num_topics, passes, k, n_repeats):
         # Perplexity, but also try coherence
@@ -87,13 +101,15 @@ def LDA_perplexities(n_topics, passes=50, k=4, n_repeats=3,
                 lda_model = gensim.models.LdaModel(corpus=corpus[:start] +\
                                                    corpus[end:],
                                                    id2word=id2word,
-                                                   chunksize=2000,
-                                                   alpha='auto',
-                                                   eta='auto',
-                                                   iterations=400,
                                                    num_topics=num_topics,
                                                    passes=passes,
-                                                   eval_every=None)
+                                                   alpha='auto',
+                                                   chunksize=2000,
+                                                   decay=0.6,
+                                                   eta='auto',
+                                                   eval_every=None,
+                                                   iterations=400,
+                                                   minimum_probability=0.001)
                 
                 # Add to perplexity_i
                 perplexity_i += 2**(-lda_model.log_perplexity(\
@@ -111,13 +127,12 @@ def LDA_perplexities(n_topics, passes=50, k=4, n_repeats=3,
     
     print('Computing LDA perplexities')
     
-    # Load data
-    data = pd.read_pickle(cf.texts_and_prices_file).sample(frac=1)
+    df = df.copy().sample(frac=1).reset_index(drop=True)
     
     # Select only relevant columns and drop NaNs
-    data = data.loc[:, ['presentation', 'q_and_a']]
-    data = data.dropna()
-    docs = pd.concat((data.presentation, data.q_and_a)).reset_index(drop=True)
+    df = df.loc[:, ['presentation', 'q_and_a']]
+    df = df.dropna()
+    docs = pd.concat((df.presentation, df.q_and_a)).reset_index(drop=True)
     
     # Apply preprocessing
     corpus, id2word = LDA_preprocess2(docs)
@@ -133,41 +148,45 @@ def LDA_perplexities(n_topics, passes=50, k=4, n_repeats=3,
     perplexities = pd.Series(perplexities, index=n_topics)
     
     if save_perplexities:
-        perplexities.to_pickle(cf.lda_perplexities)
+        perplexities.to_pickle(cf.C_lda_perplexities)
     
     return perplexities
 
 
-def LDA(num_topics=None, passes=50):
-    # Load data
-    data = pd.read_pickle(cf.texts_and_prices_file).sample(frac=1)
+def LDA(df, num_topics=None, passes=50):
+    # Settings for manual testing
+    # df = pd.read_pickle(cf.B_C_cleaned_data)
+    # num_topics = 5
+    # passes = 25
     
     # Select only relevant columns and drop NaNs
-    data = data.loc[:, ['presentation', 'q_and_a']]
-    data = data.dropna()
-    docs = pd.concat((data.presentation, data.q_and_a)).reset_index(drop=True)
+    df = df.loc[:, ['presentation', 'q_and_a']]
+    df = df.dropna()
+    docs = pd.concat((df.presentation, df.q_and_a)).reset_index(drop=True)
     
     # Apply preprocessing
     corpus, id2word = LDA_preprocess2(docs)
     
     # Get the number of topics
     if num_topics is None:
-        perplexities = pd.read_pickle(cf.lda_perplexities)
+        perplexities = pd.read_pickle(cf.C_lda_perplexities)
         num_topics = perplexities.idxmin()
     
     # Build LDA model
     lda_model = gensim.models.LdaModel(corpus=corpus,
                                        id2word=id2word,
-                                       chunksize=2000,
-                                       alpha='auto',
-                                       eta='auto',
-                                       iterations=400,
                                        num_topics=num_topics,
                                        passes=passes,
-                                       eval_every=None)
+                                       alpha='auto',
+                                       chunksize=2000,
+                                       decay=0.6,
+                                       eta='auto',
+                                       eval_every=None,
+                                       iterations=400,
+                                       minimum_probability=0.001)
     
     # Transform topics into dataframe
-    lda_topics = lda_model.print_topics()
+    lda_topics = lda_model.print_topics(num_words=20)
     str_topics = []
     for t in lda_topics:
         str_topics.append(re.findall(r'"(.*?)"', t[1]))
@@ -178,10 +197,13 @@ def LDA(num_topics=None, passes=50):
     print(lda_topics)
     
     # Save output
-    lda_topics.to_pickle(cf.lda_topics)
+    if num_topics == 2:
+        lda_topics.to_pickle(cf.C_lda_2_topics)
+    if num_topics == 3:
+        lda_topics.to_pickle(cf.C_lda_3_topics)
     
     # Save model to disk.
-    lda_model.save(cf.lda_model)
+    lda_model.save(cf.C_lda_model + f'_{num_topics}_topics')
     
     # Load a potentially pretrained model from disk.
     # lda = LdaModel.load(cf.lda_model)
@@ -189,14 +211,15 @@ def LDA(num_topics=None, passes=50):
     return None
 
 
-def plot_perplexities():
-    perplexities = pd.read_pickle(cf.lda_perplexities)
+def plot_perplexities(perplexities=None):
+    if perplexities is None:
+        perplexities = pd.read_pickle(cf.C_lda_perplexities)
     plt.figure(dpi=400, figsize=[10, 2])
     plt.subplot(1,2,1)
     plt.plot(perplexities, linewidth=0.75, c="black", ls="--")
     plt.xticks([3, 6, 9, 12, 15, 18], fontsize=8)
-    plt.yticks([275, 325, 375, 425], fontsize=8)
-    plt.ylim(250, 450)
+    # plt.yticks([275, 325, 375, 425], fontsize=8)
+    plt.ylim(190, 285)
     plt.xlabel(r'Numer of topics ($k$)')
     plt.ylabel('Perplexity')
     plt.savefig(join(cf.path_images, 'LDA_Perplexities.pdf'), 

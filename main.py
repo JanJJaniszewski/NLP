@@ -26,7 +26,6 @@ def execute_pipeline(parts):
         # Loading
         texts = pd.read_pickle(cf.A_B_texts_and_prices_file)
 
-
         if 'B_pricechangesummary' in parts:
             B.create_wordcloud()
             B.price_change_summary()
@@ -49,10 +48,12 @@ def execute_pipeline(parts):
         # Load
         texts = pd.read_pickle(cf.B_C_cleaned_data)
 
-        if 'C_LDA' in parts:
-            # This part takes roughly 16 hours
-            perplexities = C.LDA_perplexities([i for i in range(1, 21)])
-            # C.plot_perplexities()
+    if 'C_LDA' in parts:
+        # This part takes roughly 16 hours
+        perplexities = C.LDA_perplexities([i for i in range(1, 21)])
+        C.plot_perplexities(perplexities)
+        C.LDA(texts, num_topics=2)
+        C.LDA(texts, num_topics=3)
 
         # Save
         # texts.to_pickle(cf.B_C_cleaned_data)

@@ -29,7 +29,7 @@ if True:
     rc('font', **{'family': 'serif', 'serif': ['Computer Modern']})
     rc('text', usetex = True)
     
-    B.price_change_summary()
+    # B.price_change_summary()
     C.plot_perplexities()
 
 #%%
@@ -43,7 +43,9 @@ data = pd.read_pickle(cf.texts_and_prices_file)
 # Compute the perplexities for each number of topics using cross validation
 res = C.LDA(data, n_topics, default_stopwords=True)
 
-
+#%%
+import Pipeline.B_DataRepresentation as B
+B.create_wordcloud()
 
 
 
