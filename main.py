@@ -23,16 +23,15 @@ def execute_pipeline(parts):
         df_texts_and_prices.to_pickle(cf.A_B_texts_and_prices_file)
 
     if 'B' in parts:
-        # Set to false if figures shouldn't be redrawn,
-        # B.price_change_summary_2017() takes quite a while
-        if True:
-            B.create_wordcloud()
-            B.price_change_summary()
-            B.price_change_summary_2017()
-        df_text = B.transform_to_finbert_format()
-
         # Loading
         texts = pd.read_pickle(cf.A_B_texts_and_prices_file)
+
+
+        if 'B_pricechangesummary' in parts:
+            B.create_wordcloud()
+            B.price_change_summary()
+            B.price_change_summary_2017() # takes quite a while
+
         # Executing
         if 'B_names' in parts:
             texts = B.names_drop(texts)
@@ -47,11 +46,13 @@ def execute_pipeline(parts):
         # Saving
         texts.to_pickle(cf.B_C_cleaned_data)
     if 'C' in parts:
-        # This part takes roughly 16 hours
-        perplexities = C.LDA_perplexities([i for i in range(1, 21)])
-        # C.plot_perplexities()
         # Load
         texts = pd.read_pickle(cf.B_C_cleaned_data)
+
+        if 'C_LDA' in parts:
+            # This part takes roughly 16 hours
+            perplexities = C.LDA_perplexities([i for i in range(1, 21)])
+            # C.plot_perplexities()
 
         # Save
         # texts.to_pickle(cf.B_C_cleaned_data)
