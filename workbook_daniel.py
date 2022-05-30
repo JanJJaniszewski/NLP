@@ -16,7 +16,7 @@ from nltk.corpus import stopwords
 
 #%%
 
-if False:
+if True:
     import Pipeline.B_DataRepresentation as B
     import Pipeline.C_LDA as C
     

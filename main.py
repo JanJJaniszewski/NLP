@@ -50,9 +50,11 @@ def execute_pipeline(parts):
         # Load
         texts = pd.read_pickle(cf.B_C_cleaned_data)
         
-        # This part takes roughly 16 hours
-        # perplexities = C.LDA_perplexities([i for i in range(1, 21)])
-        # C.plot_perplexities()
+        # This part takes roughly 4 hours
+        perplexities = C.LDA_perplexities(texts, [i for i in range(1, 21)])
+        C.plot_perplexities(perplexities)
+        C.LDA(texts, num_topics=2)
+        C.LDA(texts, num_topics=3)
 
         # Save
         # texts.to_pickle(cf.B_C_cleaned_data)
