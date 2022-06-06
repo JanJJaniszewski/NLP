@@ -40,7 +40,7 @@ def create_wordcloud():
     print('Generating wordclouds for presentations and Q&A sessions')
 
     # Load data
-    texts = pd.read_pickle(cf.texts_and_prices_file)
+    texts = pd.read_pickle(cf.A_B_texts_and_prices_file)
 
     # Create word cloud for presentations
     text = ""
@@ -70,7 +70,7 @@ def price_change_summary():
     print('Generating histogram and summary statistics')
 
     # Load data
-    data = pd.read_pickle(cf.texts_and_prices_file)
+    data = pd.read_pickle(cf.A_B_texts_and_prices_file)
 
     if 'price_change' not in data.columns:
         data['price_change'] = data.apply(lambda row: perc_change(row), 1)

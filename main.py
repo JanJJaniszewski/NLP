@@ -50,7 +50,7 @@ def execute_pipeline(parts):
 
     if 'C_LDA' in parts:
         # This part takes roughly 16 hours
-        perplexities = C.LDA_perplexities([i for i in range(1, 21)])
+        perplexities = C.LDA_perplexities(texts, [i for i in range(1, 21)])
         C.plot_perplexities(perplexities)
         C.LDA(texts, num_topics=2)
         C.LDA(texts, num_topics=3)
