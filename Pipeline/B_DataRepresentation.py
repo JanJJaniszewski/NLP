@@ -17,10 +17,10 @@ def create_wordcloud():
         stopwords = set(STOPWORDS)
 
         # Add some words to the stop word list, this can be adjusted
-        stopwords.update(["yes", "â", "see", "going", "question", "u", "thank",
+        stopwords.update(["yes", "â", "see", "going", "question", "u", "thank", ',',
                           "you", "itâ", "s", "well", "us", "weâ", "year",
                           "will", "business", "new", "one", "continue", "end",
-                          "now", "re"])
+                          "now", "re", 'thank you', 'thanks', 'Thank', 'Thanks', 'good morning', 'morning'])
 
         # Generate a word cloud image
         wordcloud = WordCloud(width=600, height=400, max_font_size=90,
@@ -218,13 +218,74 @@ def stopwords_drop(df):
     return df
 
 
+def change_number_to_word(word, debug=False):
+    toadd = ''
+    word = word.replace(',', '.')
+    if re.findall('\d', word) == []:
+        return word
+    if '$' in word:
+        word = word.replace('$', '')
+        toadd = '$'
+    if '%' in word:
+        word = word.replace('%', '')
+        toadd = '%'
+        try:
+            perc = float(word)
+        except ValueError:
+            pass
+        else:
+            if perc < 0:
+                word = 'negative'
+            elif perc < 0.2:
+                word = 'low'
+            elif perc < 0.4:
+                word = 'midlow'
+            elif perc < 0.6:
+                word = 'midhigh'
+            elif perc < 0.8:
+                word = 'high'
+            else:
+                word = 'veryhigh'
+    else:
+        try:
+            # round number
+            num = float(word)
+        except ValueError:
+            pass
+        else:
+            divisor = int('1' + ((len(word.split('.')[0])-1) * '0'))
+            num /= divisor
+            num = round(num)
+            num *= divisor
+            word = str(num)
+
+    word += toadd
+    return word
+
+def change_numbers_in_row(row):
+    row = row.split(' ')
+    row = [change_number_to_word(word) for word in row]
+    row = ' '.join(row)
+
+
+    return row
+
+def change_numbers(df):
+    print('Changing numbers')
+    df['presentation'] = df['presentation'].apply(lambda row: change_numbers_in_row(row))
+    df['q_and_a'] = df['q_and_a'].apply(lambda row: change_numbers_in_row(row))
+    print('Finished changing numbers')
+
+    return df
+
+
 def transform_to_finbert_format(texts, column_to_transform='presentation'):
     print('Transforming data into Finbert format')
     texts['text'] = texts[column_to_transform]
     texts = texts.dropna()
     texts['label'] = 'neutral'
-    texts.loc[((texts['price_after'] - texts['price_before']) / texts['price_before']) > 0.01, 'label'] = 'positive'
-    texts.loc[((texts['price_after'] - texts['price_before']) / texts['price_before']) < -0.01, 'label'] = 'negative'
+    texts.loc[((texts['price_after'] - texts['price_before']) / texts['price_before']) > 0.0016 + 0.02, 'label'] = 'positive'
+    texts.loc[((texts['price_after'] - texts['price_before']) / texts['price_before']) < 0.0016 - 0.02, 'label'] = 'negative'
     for_finbert = texts[['text', 'label']]
     train, validate, test = \
         np.split(for_finbert.sample(frac=1, random_state=42),
@@ -235,6 +296,10 @@ def transform_to_finbert_format(texts, column_to_transform='presentation'):
     print(
         f'Saved all training, test, and validation in Finbert format to {cf.path_train}, {cf.path_validate}, {cf.path_test}')
 
+    return pd.DataFrame()
+
 
 if __name__ == '__main__':
     transform_to_finbert_format()
+
+

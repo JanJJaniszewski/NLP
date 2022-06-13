@@ -3,7 +3,6 @@ import Pipeline.B_DataRepresentation as B
 import Pipeline.C_LDA as C
 import Pipeline.D_TextStructure as D
 import Pipeline.E_AttentionModel as E
-import Pipeline.F_BERT as F
 import Pipeline.Z_DataUnpacking as Z
 import config as cf
 
@@ -36,6 +35,8 @@ def execute_pipeline(parts):
             texts = B.names_drop(texts)
         if 'B_stopwords' in parts:
             texts = B.stopwords_drop(texts)
+        if 'B_numbers' in parts:
+            texts = B.change_numbers(texts)
         if 'B_finbert_presentation' in parts:
             texts = B.transform_to_finbert_format(texts, column_to_transform='presentation')
         if 'B_finbert_qa' in parts:
@@ -62,12 +63,11 @@ def execute_pipeline(parts):
     if 'E' in parts:
         pass
     if 'F' in parts:
-        pass # See own package inside this project
+        pass  # See own package inside this project
 
 # Press the green button in the gutter to run the script.
 if __name__ == '__main__':
-    execute_pipeline(['A',
-                      'B', 'B_names', 'B_stopwords']) # General pipeline
+    execute_pipeline(['A', 'B', 'B_names', 'B_stopwords', 'B_numbers', 'B_finbert_presentation'])  # General pipeline
 
     # For BERT
     # execute_pipeline(['B', 'B_finbert']) # For Finbert
