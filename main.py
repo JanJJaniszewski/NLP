@@ -58,7 +58,8 @@ def execute_pipeline(parts):
         # Save
         # texts.to_pickle(cf.B_C_cleaned_data)
     if 'D' in parts:
-        pass
+        texts = pd.read_pickle(cf.B_C_cleaned_data)
+        swem_results = D.SWEM_analysis(texts)
     if 'E' in parts:
         pass
     if 'F' in parts:
@@ -67,7 +68,8 @@ def execute_pipeline(parts):
 # Press the green button in the gutter to run the script.
 if __name__ == '__main__':
     execute_pipeline(['A',
-                      'B', 'B_names', 'B_stopwords']) # General pipeline
+                      'B', 'B_names', 'B_stopwords',
+                      'D']) # General pipeline
 
     # For BERT
     # execute_pipeline(['B', 'B_finbert']) # For Finbert

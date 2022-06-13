@@ -17,10 +17,10 @@ def create_wordcloud():
         stopwords = set(STOPWORDS)
 
         # Add some words to the stop word list, this can be adjusted
-        stopwords.update(["yes", "â", "see", "going", "question", "u", "thank",
+        stopwords.update(["yes", "â", "see", "going", "question", "u", "thank", ',',
                           "you", "itâ", "s", "well", "us", "weâ", "year",
                           "will", "business", "new", "one", "continue", "end",
-                          "now", "re"])
+                          "now", "re", 'thank you', 'thanks', 'Thank', 'Thanks', 'good morning', 'morning'])
 
         # Generate a word cloud image
         wordcloud = WordCloud(width=600, height=400, max_font_size=90,
@@ -97,16 +97,21 @@ def price_change_summary():
 
     # Compute the means
     total_mean = data['price_change'].mean()
+    total_std = data['price_change'].std()
     positive_mean = data['price_change'][data['price_change'] > 0].mean()
+    positive_std = data['price_change'][data['price_change'] > 0].std()
     negative_mean = data['price_change'][data['price_change'] < 0].mean()
+    negative_std = data['price_change'][data['price_change'] < 0].std()
 
     # Print information
     print('\nAverage change in stock price is {}{:.2f}%' \
           .format('+' if total_mean >= 0 else '-', np.abs(total_mean) * 100))
-    print('Number of positive changes: {} (on average +{:.2f}%)' \
-          .format(change_pos, positive_mean * 100))
-    print('Number of negative changes: {} (on average -{:.2f}%)' \
-          .format(change_neg, np.abs(negative_mean) * 100))
+    print('Standard deviation of the change in stock price is {:.2f}%' \
+          .format(np.abs(total_std) * 100))
+    print('Number of positive changes: {} (avg: +{:.2f}%, std: {:.2f}%)' \
+          .format(change_pos, positive_mean * 100, positive_std * 100))
+    print('Number of negative changes: {} (avg: -{:.2f}%, std: {:.2f}%)' \
+          .format(change_neg, np.abs(negative_mean) * 100, negative_std * 100))
     print(f'Number of no changes: {change_not}')
     print(f'Number of missing values: {missing}\n')
 
@@ -118,7 +123,7 @@ def price_change_summary():
 def price_change_summary_2017():
     print('Generating histogram and summary statistics for 2017')
     # Load data
-    data = pd.read_pickle(cf.texts_and_prices_file)
+    data = pd.read_pickle(cf.A_B_texts_and_prices_file)
 
     # Initialize list for returns
     returns_list = []
@@ -126,11 +131,13 @@ def price_change_summary_2017():
     # Set start and end date
     start = date(2017, 1, 1)
     end = date(2017, 12, 31)
+    
+    tickers = list(set(data['idx']))
 
-    for i in range(data.shape[0]):
-        print(f'\rTranscript number: {str(i + 1).zfill(3)}/{data.shape[0]}',
+    for j in range(len(tickers)):
+        print(f'\rTranscript number: {str(j + 1).zfill(3)}/{len(tickers)}',
               end='\r')
-        idx_i = data.idx[i]
+        idx_i = data.idx[j]
 
         try:
             # Get the stock prices from yahoo
@@ -171,16 +178,21 @@ def price_change_summary_2017():
 
     # Compute the means
     total_mean = returns.mean()
+    total_std = returns.std()
     positive_mean = returns[returns > 0].mean()
+    positive_std = returns[returns > 0].std()
     negative_mean = returns[returns < 0].mean()
+    negative_std = returns[returns < 0].std()
 
     # Print information
     print('\nAverage change in stock price is {}{:.2f}%' \
           .format('+' if total_mean >= 0 else '-', np.abs(total_mean) * 100))
-    print('Number of positive changes: {} (on average +{:.2f}%)' \
-          .format(change_pos, positive_mean * 100))
-    print('Number of negative changes: {} (on average -{:.2f}%)' \
-          .format(change_neg, np.abs(negative_mean) * 100))
+    print('Standard deviation of the change in stock price is {:.2f}%' \
+          .format(np.abs(total_std) * 100))
+    print('Number of positive changes: {} (avg: +{:.2f}%, std: {:.2f}%)' \
+          .format(change_pos, positive_mean * 100, positive_std * 100))
+    print('Number of negative changes: {} (avg: -{:.2f}%, std: {:.2f}%)' \
+          .format(change_neg, np.abs(negative_mean) * 100, negative_std * 100))
     print(f'Number of no changes: {change_not}')
 
     print('Finished generating histogram and summary statistics for 2017')
@@ -218,13 +230,74 @@ def stopwords_drop(df):
     return df
 
 
+def change_number_to_word(word, debug=False):
+    toadd = ''
+    word = word.replace(',', '.')
+    if re.findall('\d', word) == []:
+        return word
+    if '$' in word:
+        word = word.replace('$', '')
+        toadd = '$'
+    if '%' in word:
+        word = word.replace('%', '')
+        toadd = '%'
+        try:
+            perc = float(word)
+        except ValueError:
+            pass
+        else:
+            if perc < 0:
+                word = 'negative'
+            elif perc < 0.2:
+                word = 'low'
+            elif perc < 0.4:
+                word = 'midlow'
+            elif perc < 0.6:
+                word = 'midhigh'
+            elif perc < 0.8:
+                word = 'high'
+            else:
+                word = 'veryhigh'
+    else:
+        try:
+            # round number
+            num = float(word)
+        except ValueError:
+            pass
+        else:
+            divisor = int('1' + ((len(word.split('.')[0])-1) * '0'))
+            num /= divisor
+            num = round(num)
+            num *= divisor
+            word = str(num)
+
+    word += toadd
+    return word
+
+def change_numbers_in_row(row):
+    row = row.split(' ')
+    row = [change_number_to_word(word) for word in row]
+    row = ' '.join(row)
+
+
+    return row
+
+def change_numbers(df):
+    print('Changing numbers')
+    df['presentation'] = df['presentation'].apply(lambda row: change_numbers_in_row(row))
+    df['q_and_a'] = df['q_and_a'].apply(lambda row: change_numbers_in_row(row))
+    print('Finished changing numbers')
+
+    return df
+
+
 def transform_to_finbert_format(texts, column_to_transform='presentation'):
     print('Transforming data into Finbert format')
     texts['text'] = texts[column_to_transform]
     texts = texts.dropna()
     texts['label'] = 'neutral'
-    texts.loc[((texts['price_after'] - texts['price_before']) / texts['price_before']) > 0.01, 'label'] = 'positive'
-    texts.loc[((texts['price_after'] - texts['price_before']) / texts['price_before']) < -0.01, 'label'] = 'negative'
+    texts.loc[((texts['price_after'] - texts['price_before']) / texts['price_before']) > 0.0016 + 0.02, 'label'] = 'positive'
+    texts.loc[((texts['price_after'] - texts['price_before']) / texts['price_before']) < 0.0016 - 0.02, 'label'] = 'negative'
     for_finbert = texts[['text', 'label']]
     train, validate, test = \
         np.split(for_finbert.sample(frac=1, random_state=42),
@@ -235,6 +308,10 @@ def transform_to_finbert_format(texts, column_to_transform='presentation'):
     print(
         f'Saved all training, test, and validation in Finbert format to {cf.path_train}, {cf.path_validate}, {cf.path_test}')
 
+    return pd.DataFrame()
+
 
 if __name__ == '__main__':
     transform_to_finbert_format()
+
+

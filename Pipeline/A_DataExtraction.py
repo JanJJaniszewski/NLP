@@ -1,6 +1,7 @@
 import os
 import re
 import string
+import warnings
 from datetime import timedelta
 from os.path import join
 
@@ -182,9 +183,13 @@ def get_stock_data(df_text):
         
         # Get the index of the earning calls date in the dataframe
         # date_index = np.where(prices.index == row['date'])[0][0]
-        before_index = np.where(prices.index < row['date'])[0][-1]
         after_index = np.where(prices.index > row['date'])[0][0]
-        
+        try:
+            before_index = np.where(prices.index < row['date'])[0][-1]
+        except IndexError:
+            warnings.warn('WARNING: No previous price found for: ' + row['idx'])
+            before_index = after_index
+
         # Explanation:
         # prices[whatever you want (e.g. max, min, close)][day number (0 = day before, 1 = day itself, 2 = day after)]
         # Daniel: I noticed that some stock prices already changed on the same
@@ -228,6 +233,7 @@ def get_stock_data(df_text):
         return (row['price_after'] - row['price_before']) / row['price_before']
     df_text['price_change'] = df_text.apply(lambda row: perc_change(row), 1)
 
+    df_text = df_text.loc[(df_text['price_change'] != 0) & pd.notna(df_text['price_change'])]
 
     print('Finished: Enriching data with prices from the stock market')
     return df_text
