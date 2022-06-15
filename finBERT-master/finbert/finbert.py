@@ -174,7 +174,7 @@ class FinBert(object):
 
         self.tokenizer = AutoTokenizer.from_pretrained(self.base_model, do_lower_case=self.config.do_lower_case)
 
-    def get_data(self, phase):
+    def get_data(self, phase, trainpath):
         """
         Gets the data for training or evaluation. It returns the data in the format that pytorch will process. In the
         data directory, there should be a .csv file with the name <phase>.csv
@@ -192,13 +192,13 @@ class FinBert(object):
 
         self.num_train_optimization_steps = None
         examples = None
-        examples = self.processor.get_examples(self.config.data_dir, phase)
+        examples = self.processor.get_examples(self.config.data_dir, phase, trainpath)
         self.num_train_optimization_steps = int(
             len(
                 examples) / self.config.train_batch_size / self.config.gradient_accumulation_steps) * self.config.num_train_epochs
 
         if phase == 'train':
-            train = pd.read_csv(os.path.join(self.config.data_dir, 'train.csv'), sep='\t', index_col=False)
+            train = pd.read_csv(os.path.join(self.config.data_dir, trainpath), sep='\t', index_col=False)
             weights = list()
             labels = self.label_list
 
@@ -344,7 +344,7 @@ class FinBert(object):
         dataloader = DataLoader(data, sampler=my_sampler, batch_size=self.config.train_batch_size)
         return dataloader
 
-    def train(self, train_examples, model):
+    def train(self, train_examples, model, validationpath):
         """
         Trains the model.
         Parameters
@@ -361,7 +361,7 @@ class FinBert(object):
             The trained model.
         """
 
-        validation_examples = self.get_data('validation')
+        validation_examples = self.get_data('validation', validationpath)
 
         global_step = 0
 

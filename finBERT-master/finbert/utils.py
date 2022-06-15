@@ -81,7 +81,7 @@ class FinSentProcessor(DataProcessor):
     Data processor for FinBERT.
     """
 
-    def get_examples(self, data_dir, phase):
+    def get_examples(self, data_dir, phase, path):
         """
         Get examples from the data directory.
 
@@ -92,7 +92,7 @@ class FinSentProcessor(DataProcessor):
         phase: str
             Name of the .csv file to be loaded.
         """
-        return self._create_examples(self._read_tsv(os.path.join(data_dir, (phase + ".csv"))), phase)
+        return self._create_examples(self._read_tsv(os.path.join(data_dir, (path))), phase)
 
     def get_labels(self):
         return ["positive", "negative", "neutral"]

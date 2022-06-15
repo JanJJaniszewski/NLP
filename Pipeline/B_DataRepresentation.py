@@ -11,15 +11,41 @@ from wordcloud import WordCloud, STOPWORDS
 import config as cf
 
 
+def sentenceindicators_drop(texts):
+    print('Dropping nonwords')
+    texts = texts.drop_duplicates(subset='call', keep="first")
+
+    for ind in [', ', '. ', '? ']:
+        texts['presentation'] = texts['presentation'].str.replace(ind, ' ', regex=False)
+        texts['q_and_a'] = texts['q_and_a'].str.replace(ind, ' ', regex=False)
+    print('Finished: Dropping nonwords')
+
+    return texts
+
+
+def shorten_texts(texts):
+    def get_important_text(text):
+        try:
+            if len(text) > 512:
+                return text[:320] + ' ' + text[-200:]
+        except TypeError:
+            return text
+
+    texts['presentation'] = texts['presentation'].apply(get_important_text)
+    texts['q_and_a'] = texts['q_and_a'].apply(get_important_text)
+
+    return texts
+
+
 def create_wordcloud():
     def cloud(text, filename):
         # Create stopword list:
         stopwords = set(STOPWORDS)
 
         # Add some words to the stop word list, this can be adjusted
-        stopwords.update(["yes", "â", "see", "going", "question", "u", "thank", ',',
-                          "you", "itâ", "s", "well", "us", "weâ", "year",
-                          "will", "business", "new", "one", "continue", "end",
+        stopwords.update(["â", "see", "going", "u", "thank", ',',
+                          "you", "itâ", "s", "well", "us", "weâ",
+                          "will", "continue", 'hello', 'Hello', 'Good afternoon', 'afternoon',
                           "now", "re", 'thank you', 'thanks', 'Thank', 'Thanks', 'good morning', 'morning'])
 
         # Generate a word cloud image
@@ -192,30 +218,32 @@ from gensim.parsing.preprocessing import remove_stopwords
 import urllib.request
 
 
-def names_drop(df):
+def names_drop(texts):
     print('Dropping names')
     names = urllib.request.urlopen(
         'https://www.usna.edu/Users/cs/roche/courses/s15si335/proj1/files.php%3Ff=names.txt&downloadcode=yes')
     names = str(names.read()).split('\\n')
+    names = sorted(names, key=len)
+    names.reverse()
     for n in names:
-        df['presentation'] = df['presentation'].str.replace(n, '')
-        df['q_and_a'] = df['q_and_a'].str.replace(n, '')
+        n = ' ' + n
+        texts['presentation'] = texts['presentation'].str.replace(n, '', regex=False)
+        texts['q_and_a'] = texts['q_and_a'].str.replace(n, '', regex=False)
 
     print('Finished dropping names')
-    return df
+    return texts
 
-
-def stopwords_drop(df):
+def stopwords_drop(texts):
     print('Dropping stopwords')
-    df['presentation'] = df['presentation'].apply(lambda row:
+    texts['presentation'] = texts['presentation'].apply(lambda row:
                                                   row if isinstance(row, str) else '')
-    df['q_and_a'] = df['q_and_a'].apply(lambda row:
+    texts['q_and_a'] = texts['q_and_a'].apply(lambda row:
                                         row if isinstance(row, str) else '')
-    df['presentation'] = [remove_stopwords(t) for t in df['presentation']]
-    df['q_and_a'] = [remove_stopwords(t) for t in df['q_and_a']]
+    texts['presentation'] = texts['presentation'].apply(lambda t: remove_stopwords(t))
+    texts['q_and_a'] = texts['q_and_a'].apply(lambda t: remove_stopwords(t))
 
     print('Finished dropping stopwords')
-    return df
+    return texts
 
 
 def change_number_to_word(word, debug=False):
@@ -223,29 +251,44 @@ def change_number_to_word(word, debug=False):
     word = word.replace(',', '.')
     if re.findall('\d', word) == []:
         return word
+    if ('.' in word[-1]) or (',' in word[-1]):
+        word = word[:-1]
     if '$' in word:
         word = word.replace('$', '')
-        toadd = '$'
+        toadd = ' dollar'
     if '%' in word:
         word = word.replace('%', '')
-        toadd = '%'
+        toadd = ' percent'
         try:
             perc = float(word)
         except ValueError:
             pass
         else:
-            if perc < 0:
-                word = 'negative'
+            if perc < -1:
+                word = 'negative lowest'
+            elif perc < -0.8:
+                word = 'negative lower'
+            elif perc < -0.6:
+                word = 'negative low'
+            elif perc < -0.4:
+                word = 'negative high'
+            elif perc < -0.2:
+                word = 'negative higher'
+            elif perc < 0:
+                word = 'neutral'
             elif perc < 0.2:
-                word = 'low'
+                word = 'lower'
             elif perc < 0.4:
-                word = 'midlow'
+                word = 'low'
             elif perc < 0.6:
-                word = 'midhigh'
-            elif perc < 0.8:
                 word = 'high'
+            elif perc < 0.8:
+                word = 'higher'
+            elif perc > 1:
+                word = 'highest'
             else:
-                word = 'veryhigh'
+                word = str(word)
+                Warning('Failed to transform to percentage for: ' + str(perc))
     else:
         try:
             # round number
@@ -253,7 +296,9 @@ def change_number_to_word(word, debug=False):
         except ValueError:
             pass
         else:
-            divisor = int('1' + ((len(word.split('.')[0])-1) * '0'))
+            if 1950 < num < 2040:
+                return str(num)
+            divisor = int('1' + ((len(word.split('.')[0]) - 1) * '0'))
             num /= divisor
             num = round(num)
             num *= divisor
@@ -262,13 +307,14 @@ def change_number_to_word(word, debug=False):
     word += toadd
     return word
 
+
 def change_numbers_in_row(row):
     row = row.split(' ')
     row = [change_number_to_word(word) for word in row]
     row = ' '.join(row)
 
-
     return row
+
 
 def change_numbers(df):
     print('Changing numbers')
@@ -279,27 +325,27 @@ def change_numbers(df):
     return df
 
 
-def transform_to_finbert_format(texts, column_to_transform='presentation'):
+def transform_to_finbert_format(texts, column_to_transform, path_train, path_test, path_validate):
     print('Transforming data into Finbert format')
     texts['text'] = texts[column_to_transform]
     texts = texts.dropna()
     texts['label'] = 'neutral'
-    texts.loc[((texts['price_after'] - texts['price_before']) / texts['price_before']) > 0.0016 + 0.02, 'label'] = 'positive'
-    texts.loc[((texts['price_after'] - texts['price_before']) / texts['price_before']) < 0.0016 - 0.02, 'label'] = 'negative'
+    texts.loc[
+        ((texts['price_after'] - texts['price_before']) / texts['price_before']) > 0.0016 + 0.02, 'label'] = 'positive'
+    texts.loc[
+        ((texts['price_after'] - texts['price_before']) / texts['price_before']) < 0.0016 - 0.02, 'label'] = 'negative'
     for_finbert = texts[['text', 'label']]
     train, validate, test = \
         np.split(for_finbert.sample(frac=1, random_state=42),
                  [int(.6 * len(for_finbert)), int(.8 * len(for_finbert))])
-    train.to_csv(cf.path_train, sep="\t")
-    test.to_csv(cf.path_test, sep="\t")
-    validate.to_csv(cf.path_validate, sep="\t")
+    train.to_csv(path_train, sep="\t")
+    test.to_csv(path_test, sep="\t")
+    validate.to_csv(path_validate, sep="\t")
     print(
-        f'Saved all training, test, and validation in Finbert format to {cf.path_train}, {cf.path_validate}, {cf.path_test}')
+        f'Saved all training, test, and validation in Finbert format to {path_train}, {path_validate}, {path_test}')
 
     return pd.DataFrame()
 
 
 if __name__ == '__main__':
     transform_to_finbert_format()
-
-

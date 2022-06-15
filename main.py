@@ -31,16 +31,19 @@ def execute_pipeline(parts):
             B.price_change_summary_2017() # takes quite a while
 
         # Executing
+        if 'B_sentences' in parts:
+            texts = B.sentenceindicators_drop(texts)
         if 'B_names' in parts:
             texts = B.names_drop(texts)
         if 'B_stopwords' in parts:
             texts = B.stopwords_drop(texts)
         if 'B_numbers' in parts:
             texts = B.change_numbers(texts)
-        if 'B_finbert_presentation' in parts:
-            texts = B.transform_to_finbert_format(texts, column_to_transform='presentation')
-        if 'B_finbert_qa' in parts:
-            texts = B.transform_to_finbert_format(texts, column_to_transform='q_and_a')
+        if 'B_shorten' in parts:
+            texts = B.shorten_texts(texts)
+        if 'B_finbert' in parts:
+            B.transform_to_finbert_format(texts, 'presentation', cf.path_train_pres, cf.path_test_pres, cf.path_validate_pres)
+            B.transform_to_finbert_format(texts, 'q_and_a', cf.path_train_qa, cf.path_test_qa, cf.path_validate_qa)
 
 
         # Saving
@@ -49,12 +52,12 @@ def execute_pipeline(parts):
         # Load
         texts = pd.read_pickle(cf.B_C_cleaned_data)
 
-    if 'C_LDA' in parts:
-        # This part takes roughly 16 hours
-        perplexities = C.LDA_perplexities(texts, [i for i in range(1, 21)])
-        C.plot_perplexities(perplexities)
-        C.LDA(texts, num_topics=2)
-        C.LDA(texts, num_topics=3)
+        if 'C_LDA' in parts:
+            # This part takes roughly 16 hours
+            perplexities = C.LDA_perplexities(texts, [i for i in range(1, 21)])
+            C.plot_perplexities(perplexities)
+            C.LDA(texts, num_topics=2)
+            C.LDA(texts, num_topics=3)
 
         # Save
         # texts.to_pickle(cf.B_C_cleaned_data)
@@ -67,7 +70,7 @@ def execute_pipeline(parts):
 
 # Press the green button in the gutter to run the script.
 if __name__ == '__main__':
-    execute_pipeline(['A', 'B', 'B_names', 'B_stopwords', 'B_numbers', 'B_finbert_presentation'])  # General pipeline
+    execute_pipeline(['B', 'B_names', 'B_stopwords', 'B_numbers', 'B_shorten', 'B_sentences', 'B_finbert'])  # General pipeline
 
     # For BERT
     # execute_pipeline(['B', 'B_finbert']) # For Finbert

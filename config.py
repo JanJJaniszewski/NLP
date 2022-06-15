@@ -13,9 +13,13 @@ Z_A_zipfolder = './Data/throughput/Z_A/ReleasedDataset_mp3'
 # File locations
 A_B_texts_and_prices_file = join(A_B_throughput, 'df_texts_and_prices.pickle')
 B_C_cleaned_data = join(B_C_throughput, 'df_texts_and_prices.pickle')
-path_train = join(A_B_throughput, 'train.csv')
-path_test = join(A_B_throughput, 'test.csv')
-path_validate = join(A_B_throughput, 'validation.csv')
+path_nlp = './finBERT-master/data/sentiment_data'
+path_train_qa = join(path_nlp, 'train_qa.csv')
+path_test_qa = join(path_nlp, 'test_qa.csv')
+path_validate_qa = join(path_nlp, 'validation_qa.csv')
+path_train_pres = join(path_nlp, 'train_pres.csv')
+path_test_pres = join(path_nlp, 'test_pres.csv')
+path_validate_pres = join(path_nlp, 'validation_pres.csv')
 C_lda_perplexities = join(C_C_throughput, 'perplexities.pickle')
 C_lda_2_topics = join(C_C_throughput, 'lda_2_topics.pickle')
 C_lda_3_topics = join(C_C_throughput, 'lda_3_topics.pickle')
