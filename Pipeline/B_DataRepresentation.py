@@ -321,9 +321,12 @@ def change_number_to_word(word, debug=False):
 
 
 def change_numbers_in_row(row):
-    row = row.split(' ')
-    row = [change_number_to_word(word) for word in row]
-    row = ' '.join(row)
+    if isinstance(row, str):
+        row = row.split(' ')
+        row = [change_number_to_word(word) for word in row]
+        row = ' '.join(row)
+    else:
+        row = ""
 
     return row
 
