@@ -208,6 +208,10 @@ def LDA(df, num_topics=None, passes=50):
     # Load a potentially pretrained model from disk.
     # lda = LdaModel.load(cf.lda_model)
     
+    if False:
+        lda_model = gensim.models.LdaModel.load(cf.C_lda_model + '_3_topics')
+        lda_model.print_topics(num_words=10)
+    
     return None
 
 
@@ -217,9 +221,9 @@ def plot_perplexities(perplexities=None):
     plt.figure(dpi=400, figsize=[10, 2])
     plt.subplot(1,2,1)
     plt.plot(perplexities, linewidth=0.75, c="black", ls="--")
-    plt.xticks([3, 6, 9, 12, 15, 18], fontsize=8)
-    # plt.yticks([275, 325, 375, 425], fontsize=8)
-    plt.ylim(190, 285)
+    plt.xticks([2, 4, 6, 8, 10], fontsize=8)
+    plt.yticks([195, 210, 225], fontsize=8)
+    plt.ylim(192, 228)
     plt.xlabel(r'Numer of topics ($k$)')
     plt.ylabel('Perplexity')
     plt.savefig(join(cf.path_images, 'LDA_Perplexities.pdf'), 

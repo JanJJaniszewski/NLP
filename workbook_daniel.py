@@ -339,13 +339,16 @@ def SWEM_analysis():
 
 #%%
 
-results_dict = SWEM_analysis()
+results_dict = swem_results
+# results_dict = SWEM_analysis()
 
 for key in results_dict:
     print(key)
     print(tabulate(results_dict[key], headers=results_dict[0].columns,
                    tablefmt="latex", floatfmt=".3f"))
     print('\n\n')
+
+#%%
 
 A = results_dict['word2vec-google-news-300']
 B = results_dict['glove-wiki-gigaword-300']
