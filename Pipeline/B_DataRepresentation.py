@@ -123,16 +123,21 @@ def price_change_summary():
 
     # Compute the means
     total_mean = data['price_change'].mean()
+    total_std = data['price_change'].std()
     positive_mean = data['price_change'][data['price_change'] > 0].mean()
+    positive_std = data['price_change'][data['price_change'] > 0].std()
     negative_mean = data['price_change'][data['price_change'] < 0].mean()
+    negative_std = data['price_change'][data['price_change'] < 0].std()
 
     # Print information
     print('\nAverage change in stock price is {}{:.2f}%' \
           .format('+' if total_mean >= 0 else '-', np.abs(total_mean) * 100))
-    print('Number of positive changes: {} (on average +{:.2f}%)' \
-          .format(change_pos, positive_mean * 100))
-    print('Number of negative changes: {} (on average -{:.2f}%)' \
-          .format(change_neg, np.abs(negative_mean) * 100))
+    print('Standard deviation of the change in stock price is {:.2f}%' \
+          .format(np.abs(total_std) * 100))
+    print('Number of positive changes: {} (avg: +{:.2f}%, std: {:.2f}%)' \
+          .format(change_pos, positive_mean * 100, positive_std * 100))
+    print('Number of negative changes: {} (avg: -{:.2f}%, std: {:.2f}%)' \
+          .format(change_neg, np.abs(negative_mean) * 100, negative_std * 100))
     print(f'Number of no changes: {change_not}')
     print(f'Number of missing values: {missing}\n')
 
@@ -144,7 +149,7 @@ def price_change_summary():
 def price_change_summary_2017():
     print('Generating histogram and summary statistics for 2017')
     # Load data
-    data = pd.read_pickle(cf.texts_and_prices_file)
+    data = pd.read_pickle(cf.A_B_texts_and_prices_file)
 
     # Initialize list for returns
     returns_list = []
@@ -152,11 +157,13 @@ def price_change_summary_2017():
     # Set start and end date
     start = date(2017, 1, 1)
     end = date(2017, 12, 31)
+    
+    tickers = list(set(data['idx']))
 
-    for i in range(data.shape[0]):
-        print(f'\rTranscript number: {str(i + 1).zfill(3)}/{data.shape[0]}',
+    for j in range(len(tickers)):
+        print(f'\rTranscript number: {str(j + 1).zfill(3)}/{len(tickers)}',
               end='\r')
-        idx_i = data.idx[i]
+        idx_i = data.idx[j]
 
         try:
             # Get the stock prices from yahoo
@@ -197,16 +204,21 @@ def price_change_summary_2017():
 
     # Compute the means
     total_mean = returns.mean()
+    total_std = returns.std()
     positive_mean = returns[returns > 0].mean()
+    positive_std = returns[returns > 0].std()
     negative_mean = returns[returns < 0].mean()
+    negative_std = returns[returns < 0].std()
 
     # Print information
     print('\nAverage change in stock price is {}{:.2f}%' \
           .format('+' if total_mean >= 0 else '-', np.abs(total_mean) * 100))
-    print('Number of positive changes: {} (on average +{:.2f}%)' \
-          .format(change_pos, positive_mean * 100))
-    print('Number of negative changes: {} (on average -{:.2f}%)' \
-          .format(change_neg, np.abs(negative_mean) * 100))
+    print('Standard deviation of the change in stock price is {:.2f}%' \
+          .format(np.abs(total_std) * 100))
+    print('Number of positive changes: {} (avg: +{:.2f}%, std: {:.2f}%)' \
+          .format(change_pos, positive_mean * 100, positive_std * 100))
+    print('Number of negative changes: {} (avg: -{:.2f}%, std: {:.2f}%)' \
+          .format(change_neg, np.abs(negative_mean) * 100, negative_std * 100))
     print(f'Number of no changes: {change_not}')
 
     print('Finished generating histogram and summary statistics for 2017')
