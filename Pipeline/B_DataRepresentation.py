@@ -229,6 +229,7 @@ def price_change_summary_2017():
 from gensim.parsing.preprocessing import remove_stopwords
 import urllib.request
 
+from gensim.parsing.preprocessing import STOPWORDS
 
 def names_drop(texts):
     print('Dropping names')
@@ -245,15 +246,36 @@ def names_drop(texts):
     print('Finished dropping names')
     return texts
 
-def stopwords_drop(texts):
+def stopwords_drop(texts, keep_linebreaks=False):
     print('Dropping stopwords')
     texts['presentation'] = texts['presentation'].apply(lambda row:
                                                   row if isinstance(row, str) else '')
     texts['q_and_a'] = texts['q_and_a'].apply(lambda row:
                                         row if isinstance(row, str) else '')
-    texts['presentation'] = texts['presentation'].apply(lambda t: remove_stopwords(t))
-    texts['q_and_a'] = texts['q_and_a'].apply(lambda t: remove_stopwords(t))
-
+    if not keep_linebreaks:
+        texts['presentation'] = texts['presentation'].apply(lambda t: remove_stopwords(t))
+        texts['q_and_a'] = texts['q_and_a'].apply(lambda t: remove_stopwords(t))
+    else:
+        def remove_stopwords_new(segment):
+            sentences = segment.split('\n')
+            sentences_new = []
+            
+            custom_stopwords = set(STOPWORDS) - \
+                set(['up', 'down', 'under', 'over'])
+            custom_stopwords = custom_stopwords.union(set(['thanks', 'thank']))
+            
+            for s in sentences:
+                sentences_new.append(remove_stopwords(s.lower(), stopwords=custom_stopwords))
+            
+            segment_new = ''
+            for s in sentences_new:
+                segment_new += s + '\n'
+            
+            return segment_new
+            
+        texts['presentation'] = texts['presentation'].apply(lambda t: remove_stopwords_new(t))
+        texts['q_and_a'] = texts['q_and_a'].apply(lambda t: remove_stopwords_new(t))
+        
     print('Finished dropping stopwords')
     return texts
 

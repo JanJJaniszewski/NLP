@@ -36,7 +36,7 @@ def execute_pipeline(parts):
         if 'B_names' in parts:
             texts = B.names_drop(texts)
         if 'B_stopwords' in parts:
-            texts = B.stopwords_drop(texts)
+            texts = B.stopwords_drop(texts, keep_linebreaks=True)
         if 'B_numbers' in parts:
             texts = B.change_numbers(texts)
         if 'B_shorten' in parts:
@@ -58,6 +58,9 @@ def execute_pipeline(parts):
             C.plot_perplexities(perplexities)
             C.LDA(texts, num_topics=2)
             C.LDA(texts, num_topics=3)
+            C.LDA(texts, num_topics=4)
+            C.LDA(texts, num_topics=5)
+            C.LDA(texts, num_topics=10)
 
         # Save
         # texts.to_pickle(cf.B_C_cleaned_data)

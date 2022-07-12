@@ -136,8 +136,8 @@ def split_on_qanda(df_text):
         qanda = qanda[:-1]
         
         # Remove all linebreaks
-        presentation = re.sub(r'\n', ' ', presentation)
-        qanda = re.sub(r'\n', ' ', qanda)
+        # presentation = re.sub(r'\n', ' ', presentation)
+        # qanda = re.sub(r'\n', ' ', qanda)
         
         # Return tuple with the presentation and the Q&A        
         return presentation, qanda

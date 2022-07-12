@@ -15,6 +15,14 @@ from nltk.tokenize import RegexpTokenizer
 from nltk.stem.wordnet import WordNetLemmatizer
 from os.path import join
 
+plt.rcParams.update({
+    'text.usetex': True,
+    'font.family': 'sans-serif',
+    'font.sans-serif': ['Computer Modern Sans Serif']})
+
+from matplotlib import rc
+rc('font', **{'family': 'serif', 'serif': ['Computer Modern']})
+rc('text', usetex = True)
 
 def LDA_preprocess2(docs):
     # All lower case
@@ -46,7 +54,7 @@ def LDA_preprocess2(docs):
     docs = [[lemmatizer.lemmatize(token) for token in doc] for doc in docs]
     
     # Remove additional useless words
-    to_remove = ['we', 're', 'thats', 'way']
+    to_remove = ['we', 're', 'thats', 'way', 'yes', 'were', 'it', 'weve']
     for i, d in enumerate(docs):
         docs[i] = [w for w in d if w not in to_remove]
     
@@ -127,12 +135,41 @@ def LDA_perplexities(df, n_topics, passes=50, k=5, n_repeats=3,
     
     print('Computing LDA perplexities')
     
-    df = df.copy().sample(frac=1).reset_index(drop=True)
+    # df = df.copy().sample(frac=1).reset_index(drop=True)
     
     # Select only relevant columns and drop NaNs
     df = df.loc[:, ['presentation', 'q_and_a']]
     df = df.dropna()
     docs = pd.concat((df.presentation, df.q_and_a)).reset_index(drop=True)
+    
+    # Get all sentences as docs
+    docs_new = []
+    for doc in docs:
+        docs_new += doc.split('\n')
+    docs = docs_new.copy()
+    
+    # Filter out short sentences
+    docs_new = []
+    for doc in docs:
+        if len(doc) >= 3:
+            docs_new.append(doc)
+    
+    # Plot histogram of sentence lengths
+    # bins = np.arange(-32.5, 32.5 + 1e-6, 1)
+    plt.figure(dpi=400, figsize=[6, 2.2])
+    plt.subplot(1, 2, 1)
+    plt.hist([len(doc) for doc in docs_new], bins=60, density=True, rwidth=0.6)
+    plt.xlim([-5, 410])
+    plt.ylim([0, 0.0105])
+    plt.xlabel('Number of tokens per sentence')
+    plt.ylabel('Frequency')
+    plt.xticks([0, 100, 200, 300, 400], fontsize=8)
+    plt.yticks([0.0, 0.002, 0.004, 0.006, 0.008, 0.010], fontsize=8)
+    plt.savefig(join(cf.path_images, 'tokens_per_sentence.pdf'),
+                bbox_inches="tight")
+    
+    # plt.hist([len(doc) for doc in docs_new], bins=50)
+    docs = pd.Series(docs_new)
     
     # Apply preprocessing
     corpus, id2word = LDA_preprocess2(docs)
@@ -164,6 +201,19 @@ def LDA(df, num_topics=None, passes=50):
     df = df.dropna()
     docs = pd.concat((df.presentation, df.q_and_a)).reset_index(drop=True)
     
+    # Get all sentences as docs
+    docs_new = []
+    for doc in docs:
+        docs_new += doc.split('\n')
+    docs = docs_new.copy()
+    
+    # Filter out short sentences
+    docs_new = []
+    for doc in docs:
+        if len(doc) >= 3:
+            docs_new.append(doc)
+    docs = pd.Series(docs_new)
+    
     # Apply preprocessing
     corpus, id2word = LDA_preprocess2(docs)
     
@@ -186,7 +236,7 @@ def LDA(df, num_topics=None, passes=50):
                                        minimum_probability=0.001)
     
     # Transform topics into dataframe
-    lda_topics = lda_model.print_topics(num_words=20)
+    lda_topics = lda_model.print_topics(num_words=10)
     str_topics = []
     for t in lda_topics:
         str_topics.append(re.findall(r'"(.*?)"', t[1]))
@@ -196,11 +246,20 @@ def LDA(df, num_topics=None, passes=50):
     print('These are the topics that are found:')
     print(lda_topics)
     
+    print('Coherence score:')
+    coherence_model = gensim.models.CoherenceModel(model=lda_model,
+        corpus=corpus, dictionary=id2word, coherence='u_mass')
+    coherence_score = coherence_model.get_coherence()
+    print(coherence_score)
+    
     # Save output
     if num_topics == 2:
         lda_topics.to_pickle(cf.C_lda_2_topics)
     if num_topics == 3:
         lda_topics.to_pickle(cf.C_lda_3_topics)
+    else:
+        lda_topics.to_pickle(cf.C_lda_2_topics[:26] + \
+                             f'{num_topics}' + cf.C_lda_2_topics[27:])
     
     # Save model to disk.
     lda_model.save(cf.C_lda_model + f'_{num_topics}_topics')
@@ -209,21 +268,51 @@ def LDA(df, num_topics=None, passes=50):
     # lda = LdaModel.load(cf.lda_model)
     
     if False:
-        lda_model = gensim.models.LdaModel.load(cf.C_lda_model + '_3_topics')
+        lda_model = gensim.models.LdaModel.load(cf.C_lda_model + '_2_topics')
         lda_model.print_topics(num_words=10)
-    
+        coherence_model = gensim.models.CoherenceModel(model=lda_model,
+            corpus=corpus, dictionary=id2word, coherence='u_mass')
+        coherence_score = coherence_model.get_coherence()
+        pd.read_pickle(cf.C_lda_2_topics[:26] + '2' + cf.C_lda_2_topics[27:])
+        print(coherence_score)
+        
+        lda_model = gensim.models.LdaModel.load(cf.C_lda_model + '_4_topics')
+        lda_model.print_topics(num_words=10)
+        coherence_model = gensim.models.CoherenceModel(model=lda_model,
+            corpus=corpus, dictionary=id2word, coherence='u_mass')
+        coherence_score = coherence_model.get_coherence()
+        pd.read_pickle(cf.C_lda_2_topics[:26] + '4' + cf.C_lda_2_topics[27:])
+        print(coherence_score)
+        
+        lengths = np.array([len(doc) for doc in docs])
+        lengths.mean()
+        lengths.var()
+        
     return None
 
 
 def plot_perplexities(perplexities=None):
+    # bins = np.arange(-32.5, 32.5 + 1e-6, 1)
+    # plt.figure(dpi=400, figsize=[6, 2.2])
+    # plt.subplot(1, 2, 1)
+    # plt.hist(returns * 100, bins=bins, density=True, rwidth=0.6)
+    # plt.xlim([-0.32 * 100, 0.32 * 100])
+    # plt.ylim([0, 0.32])
+    # plt.xlabel(r'Two-day returns (in \%)')
+    # plt.ylabel('Frequency')
+    # plt.xticks([-25, -12.5, 0, 12.5, 25], fontsize=8)
+    # plt.yticks([0.0, 0.075, 0.15, 0.225, 0.3], fontsize=8)
+    # plt.savefig(join(cf.path_images, 'price_change_hist_2017.pdf'),
+    #             bbox_inches="tight")
+    
     if perplexities is None:
         perplexities = pd.read_pickle(cf.C_lda_perplexities)
-    plt.figure(dpi=400, figsize=[10, 2])
+    plt.figure(dpi=400, figsize=[6, 2.2])
     plt.subplot(1,2,1)
     plt.plot(perplexities, linewidth=0.75, c="black", ls="--")
     plt.xticks([2, 4, 6, 8, 10], fontsize=8)
-    plt.yticks([195, 210, 225], fontsize=8)
-    plt.ylim(192, 228)
+    plt.yticks([145, 155, 165, 175], fontsize=8)
+    plt.ylim(142, 178)
     plt.xlabel(r'Numer of topics ($k$)')
     plt.ylabel('Perplexity')
     plt.savefig(join(cf.path_images, 'LDA_Perplexities.pdf'), 
